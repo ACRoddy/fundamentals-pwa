@@ -4,13 +4,12 @@ import BackButton from '../components/BackButton'
 import SectionCard from '../components/SectionCard'
 
 const sections = [
-  { label: 'Welcome Routine',            route: 'welcome',   accent: 'Fixed' },
-  { label: 'Warm Up Games',              route: 'warmup',    sublabel: 'Cone Rescue · Tag Tails' },
-  { label: 'Throwing, Catching & Passing', route: 'throwing', sublabel: 'Boulder Bowling' },
-  { label: 'Kicking, Striking & Scoring', route: 'kicking',  sublabel: 'Find the Goal' },
-  { label: 'Game',                       route: 'game',      sublabel: 'Over the River' },
-  { label: 'Cool Down',                  route: 'cooldown',  sublabel: 'Parachute' },
-  { label: 'Tidy Up Routine',            route: 'tidyup',    accent: 'Fixed' },
+  { label: 'Welcome Routine',              route: 'welcome',   accent: 'Fixed' },
+  { label: 'Warm Up Games',                route: 'warmup',    sublabel: 'Cone Rescue · Tag Tails' },
+  { label: 'Throwing, Catching & Passing', route: 'throwing',  sublabel: 'Find the Goal · Boulder Bowling' },
+  { label: 'Kicking, Striking & Scoring',  route: 'kicking',   sublabel: 'Kick for Goal · Over the River' },
+  { label: 'Cool Down',                    route: 'cooldown',  sublabel: 'Parachute' },
+  { label: 'Tidy Up Routine',              route: 'tidyup',    accent: 'Fixed' },
 ]
 
 export default function SessionPage() {

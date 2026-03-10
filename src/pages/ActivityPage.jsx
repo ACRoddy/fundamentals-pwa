@@ -1,21 +1,20 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import BackButton from '../components/BackButton'
 import EquipmentBadge from '../components/EquipmentBadge'
-import SectionCard from '../components/SectionCard'
 import { week1 } from '../data/week1'
 
-const sectionMap = {
-  throwing: week1.throwing,
-  kicking:  week1.kicking,
-  game:     week1.game,
-}
-
 export default function ActivityPage() {
-  const { weekId } = useParams()
-  const navigate   = useNavigate()
-  const location   = useLocation()
-  const section    = location.pathname.split('/').pop()
-  const activity   = sectionMap[section]
+  const { weekId, slot } = useParams()
+  const navigate  = useNavigate()
+  const location  = useLocation()
+  // path: /lessons/:weekId/throwing/1  →  parts[-2] = 'throwing'
+  const parts     = location.pathname.split('/')
+  const section   = parts[parts.length - 2]
+  const activities = week1[section]
+  const activity   = activities?.[parseInt(slot, 10) - 1]
+
+  const otherSlot     = slot === '1' ? '2' : '1'
+  const otherActivity = activities?.[parseInt(otherSlot, 10) - 1]
 
   if (!activity) {
     return (
@@ -27,9 +26,10 @@ export default function ActivityPage() {
 
   return (
     <div className="min-h-screen bg-[#007A3D] px-4 pt-safe pb-8">
+
       {/* Header */}
       <div className="flex items-center gap-4 pt-5 pb-4">
-        <BackButton to={`/lessons/${weekId}`} />
+        <BackButton to={`/lessons/${weekId}/${section}`} />
         <div>
           <p className="text-white/60 text-xs">{activity.slot}</p>
           <h2 className="text-white font-extrabold text-xl">{activity.name}</h2>
@@ -50,12 +50,20 @@ export default function ActivityPage() {
         </div>
       )}
 
-      {/* Diagram / image */}
-      {activity.image && (
+      {/* Diagram / image(s) */}
+      {activity.images?.length > 0 ? (
+        <div className="flex flex-col gap-3 mb-5">
+          {activity.images.map((src, i) => (
+            <div key={i} className="rounded-2xl overflow-hidden bg-white/10">
+              <img src={src} alt={`${activity.name} ${i + 1}`} className="w-full object-contain max-h-52" />
+            </div>
+          ))}
+        </div>
+      ) : activity.image ? (
         <div className="rounded-2xl overflow-hidden mb-5 bg-white/10">
           <img src={activity.image} alt={activity.name} className="w-full object-contain max-h-52" />
         </div>
-      )}
+      ) : null}
 
       {/* Instructions */}
       <div className="bg-white/10 rounded-2xl p-4 mb-4">
@@ -72,7 +80,7 @@ export default function ActivityPage() {
         </ol>
       </div>
 
-      {/* Encourage / P1 coaching notes */}
+      {/* Coaching notes */}
       {(activity.encourage || activity.p1) && (
         <div className="bg-white/10 rounded-2xl p-4 mb-4">
           <h3 className="text-[#FFCC00] font-bold text-sm uppercase tracking-wide mb-2">Coaching Notes</h3>
@@ -85,7 +93,7 @@ export default function ActivityPage() {
         </div>
       )}
 
-      {/* Extension (kicking) */}
+      {/* Extension / P1 steps */}
       {activity.extension?.length > 0 && (
         <div className="bg-white/10 rounded-2xl p-4 mb-4">
           <h3 className="text-[#FFCC00] font-bold text-sm uppercase tracking-wide mb-3">Extension / P1</h3>
@@ -102,17 +110,16 @@ export default function ActivityPage() {
         </div>
       )}
 
-      {/* Alternative activity (throwing) */}
-      {activity.alternative && (
-        <div className="mt-2">
-          <p className="text-white/60 text-xs uppercase tracking-wide px-1 mb-2">Alternative Activity</p>
-          <SectionCard
-            label={activity.alternative.name}
-            sublabel="Tap to view"
-            onClick={() => navigate(`/lessons/${weekId}/${section}/alternative`)}
-          />
-        </div>
+      {/* Switch to other activity in same section */}
+      {otherActivity && (
+        <button
+          onClick={() => navigate(`/lessons/${weekId}/${section}/${otherSlot}`)}
+          className="w-full bg-[#FFCC00] text-black font-bold rounded-2xl py-3 text-sm mt-2"
+        >
+          Switch to {otherActivity.name} →
+        </button>
       )}
+
     </div>
   )
 }

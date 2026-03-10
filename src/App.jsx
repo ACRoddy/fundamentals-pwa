@@ -5,8 +5,8 @@ import WeekGridPage        from './pages/WeekGridPage'
 import SessionPage         from './pages/SessionPage'
 import WarmUpListPage      from './pages/WarmUpListPage'
 import WarmUpPage          from './pages/WarmUpPage'
+import ActivityListPage    from './pages/ActivityListPage'
 import ActivityPage        from './pages/ActivityPage'
-import AlternativePage     from './pages/AlternativePage'
 import WelcomeRoutinePage  from './pages/WelcomeRoutinePage'
 import TidyUpPage          from './pages/TidyUpPage'
 import ParentBriefingPage  from './pages/ParentBriefingPage'
@@ -30,10 +30,10 @@ export default function App() {
         <Route path="/lessons/:weekId/welcome"               element={<WelcomeRoutinePage />} />
         <Route path="/lessons/:weekId/warmup"                element={<WarmUpListPage />} />
         <Route path="/lessons/:weekId/warmup/:slot"          element={<WarmUpPage />} />
-        <Route path="/lessons/:weekId/throwing"              element={<ActivityPage />} />
-        <Route path="/lessons/:weekId/kicking"               element={<ActivityPage />} />
-        <Route path="/lessons/:weekId/game"                  element={<ActivityPage />} />
-        <Route path="/lessons/:weekId/throwing/alternative"  element={<AlternativePage />} />
+        <Route path="/lessons/:weekId/throwing"              element={<ActivityListPage />} />
+        <Route path="/lessons/:weekId/throwing/:slot"        element={<ActivityPage />} />
+        <Route path="/lessons/:weekId/kicking"               element={<ActivityListPage />} />
+        <Route path="/lessons/:weekId/kicking/:slot"         element={<ActivityPage />} />
         <Route path="/lessons/:weekId/cooldown"              element={<CoolDownPage />} />
         <Route path="/lessons/:weekId/tidyup"                element={<TidyUpPage />} />
         <Route path="/lessons/:weekId/parents"               element={<ParentBriefingPage />} />
