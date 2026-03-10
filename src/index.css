@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --color-green-club: #007A3D;
+  --color-yellow-club: #FFCC00;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #007A3D;
+  overscroll-behavior: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
