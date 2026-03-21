@@ -1,11 +1,15 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import BackButton from '../components/BackButton'
 import SectionCard from '../components/SectionCard'
-import { week1 } from '../data/week1'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { useWeekData } from '../hooks/useWeekData'
 
 export default function WarmUpListPage() {
-  const { weekId } = useParams()
-  const navigate = useNavigate()
+  const { weekId }  = useParams()
+  const navigate    = useNavigate()
+  const { weekData, loading } = useWeekData(weekId)
+
+  if (loading) return <LoadingSpinner />
 
   return (
     <div className="min-h-screen bg-[#007A3D] px-4 pt-safe pb-8">
@@ -14,7 +18,7 @@ export default function WarmUpListPage() {
         <h2 className="text-white font-extrabold text-xl">Warm Up Games</h2>
       </div>
       <div className="flex flex-col gap-3">
-        {week1.warmup.map((activity, i) => (
+        {(weekData?.warmup || []).map((activity, i) => (
           <SectionCard
             key={activity.id}
             label={activity.name}

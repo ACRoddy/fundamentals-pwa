@@ -1,12 +1,19 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import BackButton from '../components/BackButton'
 import EquipmentBadge from '../components/EquipmentBadge'
-import { week1 } from '../data/week1'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { useWeekData } from '../hooks/useWeekData'
 
 export default function WarmUpPage() {
   const { weekId, slot } = useParams()
   const navigate = useNavigate()
-  const activity = week1.warmup[parseInt(slot, 10) - 1]
+  const { weekData, loading } = useWeekData(weekId)
+
+  if (loading) return <LoadingSpinner />
+
+  const activity      = weekData?.warmup?.[parseInt(slot, 10) - 1]
+  const otherSlot     = slot === '1' ? '2' : '1'
+  const otherActivity = weekData?.warmup?.[parseInt(otherSlot, 10) - 1]
 
   if (!activity) {
     return (
@@ -16,26 +23,20 @@ export default function WarmUpPage() {
     )
   }
 
-  const otherSlot = slot === '1' ? '2' : '1'
-  const otherActivity = week1.warmup[parseInt(otherSlot, 10) - 1]
-
   return (
     <div className="min-h-screen bg-[#007A3D] px-4 pt-safe pb-8">
-      {/* Header */}
       <div className="flex items-center gap-4 pt-5 pb-4">
         <BackButton to={`/lessons/${weekId}/warmup`} />
         <div>
-          <p className="text-white/60 text-xs">{activity.slot}</p>
+          <p className="text-white/60 text-xs">Warm Up Game {slot}</p>
           <h2 className="text-white font-extrabold text-xl">{activity.name}</h2>
         </div>
       </div>
 
-      {/* Equipment */}
       <div className="flex flex-wrap gap-2 mb-4">
         {activity.equipment.map((e) => <EquipmentBadge key={e} item={e} />)}
       </div>
 
-      {/* Diagram(s) — supports single image or images[] array */}
       {activity.images?.length > 0 ? (
         <div className="flex flex-col gap-3 mb-5">
           {activity.images.map((src, i) => (
@@ -50,7 +51,6 @@ export default function WarmUpPage() {
         </div>
       ) : null}
 
-      {/* Instructions */}
       <div className="bg-white/10 rounded-2xl p-4 mb-4">
         <h3 className="text-[#FFCC00] font-bold text-sm uppercase tracking-wide mb-3">Instructions</h3>
         <ol className="space-y-2.5">
@@ -65,7 +65,6 @@ export default function WarmUpPage() {
         </ol>
       </div>
 
-      {/* Easier / Harder */}
       {(activity.easier || activity.harder) && (
         <div className="grid grid-cols-2 gap-2 mb-4">
           {activity.easier && (
@@ -83,13 +82,14 @@ export default function WarmUpPage() {
         </div>
       )}
 
-      {/* Switch warm-up */}
-      <button
-        onClick={() => navigate(`/lessons/${weekId}/warmup/${otherSlot}`)}
-        className="w-full bg-[#FFCC00] text-black font-bold rounded-2xl py-3 text-sm mt-2"
-      >
-        Switch to {otherActivity.name} →
-      </button>
+      {otherActivity && (
+        <button
+          onClick={() => navigate(`/lessons/${weekId}/warmup/${otherSlot}`)}
+          className="w-full bg-[#FFCC00] text-black font-bold rounded-2xl py-3 text-sm mt-2"
+        >
+          Switch to {otherActivity.name} →
+        </button>
+      )}
     </div>
   )
 }

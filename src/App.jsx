@@ -13,6 +13,10 @@ import ParentBriefingPage  from './pages/ParentBriefingPage'
 import OrganisationPage    from './pages/OrganisationPage'
 import CoolDownPage        from './pages/CoolDownPage'
 import ComingSoonPage      from './pages/ComingSoonPage'
+import AdminGatePage       from './pages/admin/AdminGatePage'
+import AdminHomePage       from './pages/admin/AdminHomePage'
+import WeekSetupPage       from './pages/admin/WeekSetupPage'
+import ActivityFormPage    from './pages/admin/ActivityFormPage'
 
 export default function App() {
   return (
@@ -38,6 +42,12 @@ export default function App() {
         <Route path="/lessons/:weekId/tidyup"                element={<TidyUpPage />} />
         <Route path="/lessons/:weekId/parents"               element={<ParentBriefingPage />} />
         <Route path="/lessons/:weekId/layout"                element={<OrganisationPage />} />
+
+        {/* Admin */}
+        <Route path="/admin"              element={<AdminGatePage />} />
+        <Route path="/admin/home"         element={<AdminHomePage />} />
+        <Route path="/admin/week"         element={<WeekSetupPage />} />
+        <Route path="/admin/activity/new" element={<ActivityFormPage />} />
 
         {/* Coming soon sections */}
         <Route path="/inclusion"         element={<ComingSoonPage />} />

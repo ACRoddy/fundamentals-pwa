@@ -1,10 +1,15 @@
 import { useParams } from 'react-router-dom'
 import BackButton from '../components/BackButton'
-import { week1 } from '../data/week1'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { useWeekData } from '../hooks/useWeekData'
 
 export default function OrganisationPage() {
   const { weekId } = useParams()
-  const { layout } = week1
+  const { weekData, loading } = useWeekData(weekId)
+
+  if (loading) return <LoadingSpinner />
+
+  const layout = weekData?.layout || { notes: [], image: null }
 
   return (
     <div className="min-h-screen bg-[#007A3D] px-4 pt-safe pb-8">

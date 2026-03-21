@@ -1,7 +1,8 @@
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import BackButton from '../components/BackButton'
 import SectionCard from '../components/SectionCard'
-import { week1 } from '../data/week1'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { useWeekData } from '../hooks/useWeekData'
 
 const sectionLabels = {
   throwing: 'Throwing, Catching & Passing',
@@ -13,7 +14,11 @@ export default function ActivityListPage() {
   const navigate     = useNavigate()
   const location     = useLocation()
   const section      = location.pathname.split('/').pop()
-  const activities   = week1[section]
+  const { weekData, loading } = useWeekData(weekId)
+
+  if (loading) return <LoadingSpinner />
+
+  const activities   = weekData?.[section] || []
   const label        = sectionLabels[section] || section
 
   return (

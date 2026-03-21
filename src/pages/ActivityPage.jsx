@@ -1,17 +1,21 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import BackButton from '../components/BackButton'
 import EquipmentBadge from '../components/EquipmentBadge'
-import { week1 } from '../data/week1'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { useWeekData } from '../hooks/useWeekData'
 
 export default function ActivityPage() {
   const { weekId, slot } = useParams()
   const navigate  = useNavigate()
   const location  = useLocation()
-  // path: /lessons/:weekId/throwing/1  →  parts[-2] = 'throwing'
   const parts     = location.pathname.split('/')
   const section   = parts[parts.length - 2]
-  const activities = week1[section]
-  const activity   = activities?.[parseInt(slot, 10) - 1]
+  const { weekData, loading } = useWeekData(weekId)
+
+  if (loading) return <LoadingSpinner />
+
+  const activities = weekData?.[section] || []
+  const activity   = activities[parseInt(slot, 10) - 1]
 
   const otherSlot     = slot === '1' ? '2' : '1'
   const otherActivity = activities?.[parseInt(otherSlot, 10) - 1]
