@@ -28,7 +28,10 @@ export function cacheClear(key) {
 // ─── Shape a DB activities row → app format ────────────────────────────────────
 function shapeActivity(row) {
   if (!row) return null
-  const imgs = (row.images || []).map(f => `/images/${f}`)
+  const imgs = (row.images || []).map(f => {
+    const name = /\.[a-z]{2,4}$/i.test(f) ? f : `${f}.png`
+    return `/images/${name}`
+  })
   return {
     id:          row.id,
     name:        row.name,
