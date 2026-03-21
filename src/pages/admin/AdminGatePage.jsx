@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const PIN_CONFIGURED = !!import.meta.env.VITE_ADMIN_PIN
+
 export default function AdminGatePage() {
   const [pin, setPin]     = useState('')
   const [error, setError] = useState(false)
@@ -24,6 +26,12 @@ export default function AdminGatePage() {
       <h1 className="text-white font-extrabold text-2xl mb-1">Admin</h1>
       <p className="text-white/60 text-sm mb-8">Enter your PIN to continue</p>
 
+      {!PIN_CONFIGURED && (
+        <p className="text-red-300 text-sm text-center mb-4 bg-white/10 rounded-xl px-4 py-3">
+          ⚠️ Admin PIN not set — add <strong>VITE_ADMIN_PIN</strong> to your Vercel environment variables, then redeploy.
+        </p>
+      )}
+
       <form onSubmit={handleSubmit} className="w-full max-w-xs flex flex-col gap-4">
         <input
           type="password"
@@ -32,13 +40,15 @@ export default function AdminGatePage() {
           value={pin}
           onChange={e => setPin(e.target.value)}
           placeholder="PIN"
-          className="w-full text-center text-2xl tracking-widest bg-white/10 border-2 border-white/20 rounded-2xl py-4 text-white placeholder-white/30 focus:outline-none focus:border-[#FFCC00]"
+          disabled={!PIN_CONFIGURED}
+          className="w-full text-center text-2xl tracking-widest bg-white/10 border-2 border-white/20 rounded-2xl py-4 text-white placeholder-white/30 focus:outline-none focus:border-[#FFCC00] disabled:opacity-40"
           autoFocus
         />
         {error && <p className="text-red-300 text-sm text-center">Incorrect PIN — try again</p>}
         <button
           type="submit"
-          className="w-full bg-[#FFCC00] text-black font-bold rounded-2xl py-4 text-lg"
+          disabled={!PIN_CONFIGURED}
+          className="w-full bg-[#FFCC00] text-black font-bold rounded-2xl py-4 text-lg disabled:opacity-40"
         >
           Enter
         </button>

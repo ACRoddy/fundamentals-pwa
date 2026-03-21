@@ -1,5 +1,10 @@
 import { supabase } from './supabase'
 
+// Throws a clear error if Supabase isn't configured (env vars missing on Vercel)
+function requireSupabase() {
+  if (!supabase) throw new Error('Supabase not configured — add environment variables to Vercel.')
+}
+
 // ─── Cache helpers (localStorage, 10-min TTL) ─────────────────────────────────
 const TTL = 10 * 60 * 1000
 
@@ -45,6 +50,7 @@ function shapeActivity(row) {
 // ─── Public reads ──────────────────────────────────────────────────────────────
 
 export async function getAllWeeks() {
+  requireSupabase()
   const cached = cacheGet('all_weeks')
   if (cached) return cached
 
@@ -65,6 +71,7 @@ export async function getAllWeeks() {
 }
 
 export async function getWeekData(weekId) {
+  requireSupabase()
   const cached = cacheGet(`week_${weekId}`)
   if (cached) return cached
 
@@ -104,6 +111,7 @@ export async function getWeekData(weekId) {
 }
 
 export async function getAllActivities(type = null) {
+  requireSupabase()
   const cacheKey = type ? `activities_${type}` : 'activities_all'
   const cached   = cacheGet(cacheKey)
   if (cached) return cached
@@ -120,6 +128,7 @@ export async function getAllActivities(type = null) {
 // ─── Admin writes ──────────────────────────────────────────────────────────────
 
 export async function saveActivity(activity) {
+  requireSupabase()
   const { data, error } = await supabase
     .from('activities')
     .upsert(activity, { onConflict: 'id' })
@@ -134,6 +143,7 @@ export async function saveActivity(activity) {
 }
 
 export async function saveWeekPlan({ weekNumber, focus, layoutNotes, slots }) {
+  requireSupabase()
   const { error: planErr } = await supabase
     .from('week_plans')
     .upsert({ week_number: weekNumber, focus, layout_notes: layoutNotes, is_active: true },
