@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BackButton from '../../components/BackButton'
-import { saveActivity } from '../../lib/api'
+import { saveActivity, uploadActivityImage } from '../../lib/api'
 
 const TYPES = [
   { value: 'warmup',   label: 'Warm Up' },
@@ -23,7 +23,7 @@ export default function ActivityFormPage() {
     type:         'warmup',
     skill_cue:    '',
     equipment:    '',         // comma-separated string, converted on save
-    images:       '',         // comma-separated filenames
+    images:       [],         // array of URLs (Supabase Storage or /images/ legacy)
     coaching_note: '',
     p1_note:      '',
     easier:       '',
@@ -31,10 +31,12 @@ export default function ActivityFormPage() {
   })
   const [instructions, setInstructions] = useState([''])
   const [extension,    setExtension]    = useState([''])
-  const [saving,       setSaving]       = useState(false)
-  const [saved,        setSaved]        = useState(false)
-  const [error,        setError]        = useState(null)
-  const [idEdited,     setIdEdited]     = useState(false)
+  const [saving,         setSaving]         = useState(false)
+  const [saved,          setSaved]          = useState(false)
+  const [error,          setError]          = useState(null)
+  const [idEdited,       setIdEdited]       = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (!sessionStorage.getItem('adminAuth')) navigate('/admin', { replace: true })
@@ -53,6 +55,26 @@ export default function ActivityFormPage() {
   function removeStep(setter, i) { setter(prev => prev.filter((_, j) => j !== i)) }
   function setStep(setter, i, value) { setter(prev => { const n = [...prev]; n[i] = value; return n }) }
 
+  async function handleImagePick(e) {
+    const files = Array.from(e.target.files)
+    if (!files.length) return
+    setUploadingImage(true)
+    setError(null)
+    try {
+      const urls = await Promise.all(files.map(f => uploadActivityImage(f)))
+      setForm(prev => ({ ...prev, images: [...prev.images, ...urls] }))
+    } catch (err) {
+      setError(`Image upload failed: ${err.message}`)
+    } finally {
+      setUploadingImage(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  function removeImage(url) {
+    setForm(prev => ({ ...prev, images: prev.images.filter(u => u !== url) }))
+  }
+
   async function handleSave(e) {
     e.preventDefault()
     setSaving(true)
@@ -64,7 +86,7 @@ export default function ActivityFormPage() {
         type:          form.type,
         skill_cue:     form.skill_cue || null,
         equipment:     form.equipment.split(',').map(s => s.trim()).filter(Boolean),
-        images:        form.images.split(',').map(s => s.trim()).filter(Boolean),
+        images:        form.images,
         instructions:  instructions.filter(Boolean),
         coaching_note: form.coaching_note || null,
         p1_note:       form.p1_note       || null,
@@ -123,10 +145,30 @@ export default function ActivityFormPage() {
               placeholder="Cones, Football, Markers" className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Image filenames (comma-separated)</label>
-            <input value={form.images} onChange={e => setField('images', e.target.value)}
-              placeholder="tag-tails-diagram.png, tag-tails-image.png" className={inputClass} />
-            <p className="text-white/40 text-xs mt-1">Drop image files in public/images/ first</p>
+            <label className={labelClass}>Images</label>
+            {/* Previews */}
+            {form.images.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {form.images.map(url => (
+                  <div key={url} className="relative w-20 h-20">
+                    <img src={url} alt="" className="w-20 h-20 object-cover rounded-xl" />
+                    <button type="button" onClick={() => removeImage(url)}
+                      className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold leading-none">
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Hidden file input */}
+            <input ref={fileInputRef} type="file" accept="image/*" multiple
+              className="hidden" onChange={handleImagePick} />
+            <button type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+              className="w-full border-2 border-dashed border-white/30 rounded-xl py-3 text-white/60 text-sm hover:border-[#FFCC00] hover:text-[#FFCC00] transition-colors disabled:opacity-50">
+              {uploadingImage ? 'Uploading…' : '+ Add Image'}
+            </button>
           </div>
         </div>
 

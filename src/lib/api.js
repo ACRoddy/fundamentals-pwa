@@ -29,9 +29,11 @@ export function cacheClear(key) {
 function shapeActivity(row) {
   if (!row) return null
   const imgs = (row.images || []).map(f => {
+    if (!f) return null
+    if (f.startsWith('http')) return f            // full Supabase Storage URL
     const name = /\.[a-z]{2,4}$/i.test(f) ? f : `${f}.png`
-    return `/images/${name}`
-  })
+    return `/images/${name}`                      // legacy filename in public/images/
+  }).filter(Boolean)
   return {
     id:          row.id,
     name:        row.name,
@@ -143,6 +145,18 @@ export async function saveActivity(activity) {
     'activities_kicking', 'activities_cooldown'].forEach(k => cacheClear(k))
 
   return data[0]
+}
+
+export async function uploadActivityImage(file) {
+  requireSupabase()
+  const ext      = file.name.split('.').pop()
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const { error } = await supabase.storage
+    .from('activity-images')
+    .upload(filename, file, { contentType: file.type, upsert: false })
+  if (error) throw error
+  const { data } = supabase.storage.from('activity-images').getPublicUrl(filename)
+  return data.publicUrl
 }
 
 export async function saveWeekPlan({ weekNumber, focus, layoutNotes, slots }) {
