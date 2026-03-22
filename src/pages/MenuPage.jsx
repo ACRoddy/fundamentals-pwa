@@ -27,7 +27,7 @@ export default function MenuPage() {
       </div>
 
       {/* 2-column tile grid */}
-      <div className="grid grid-cols-2 gap-3 flex-1 pb-8">
+      <div className="grid grid-cols-2 gap-3 pb-4">
         {menuItems.map((item) => (
           <YellowTile
             key={item.route}
@@ -37,6 +37,13 @@ export default function MenuPage() {
             className="p-4 min-h-[90px]"
           />
         ))}
+      </div>
+
+      {/* Discreet admin link */}
+      <div className="flex justify-center pb-8 pt-2">
+        <button onClick={() => navigate('/admin')} className="text-white/30 text-xs underline">
+          Admin
+        </button>
       </div>
     </div>
   )
