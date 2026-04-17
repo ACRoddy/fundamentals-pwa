@@ -25,6 +25,18 @@ export function cacheClear(key) {
   localStorage.removeItem(`fnd_${key}`)
 }
 
+// ─── Offline snapshot cache (no TTL — persists until next sync) ───────────────
+function snapGet(key) {
+  try { return JSON.parse(localStorage.getItem(`fnd_snap_${key}`)) } catch { return null }
+}
+function snapSet(key, data) {
+  try { localStorage.setItem(`fnd_snap_${key}`, JSON.stringify(data)) } catch {}
+}
+export function getLastSyncTime() {
+  const ts = localStorage.getItem('fnd_snap_synced_at')
+  return ts ? new Date(parseInt(ts)) : null
+}
+
 // ─── Shape a DB activities row → app format ────────────────────────────────────
 function shapeActivity(row) {
   if (!row) return null
@@ -59,20 +71,26 @@ export async function getAllWeeks() {
   const cached = cacheGet('all_weeks')
   if (cached) return cached
 
-  const { data, error } = await supabase
-    .from('week_plans')
-    .select('week_number, is_active')
-  if (error) throw error
+  try {
+    const { data, error } = await supabase
+      .from('week_plans')
+      .select('week_number, is_active')
+    if (error) throw error
 
-  const active = new Set(data.filter(w => w.is_active).map(w => w.week_number))
-  const weeks  = Array.from({ length: 24 }, (_, i) => ({
-    id:     i + 1,
-    title:  `Week ${i + 1}`,
-    active: active.has(i + 1),
-  }))
+    const active = new Set(data.filter(w => w.is_active).map(w => w.week_number))
+    const weeks  = Array.from({ length: 24 }, (_, i) => ({
+      id:     i + 1,
+      title:  `Week ${i + 1}`,
+      active: active.has(i + 1),
+    }))
 
-  cacheSet('all_weeks', weeks)
-  return weeks
+    cacheSet('all_weeks', weeks)
+    return weeks
+  } catch (err) {
+    const snap = snapGet('all_weeks')
+    if (snap) return snap
+    throw err
+  }
 }
 
 export async function getWeekData(weekId) {
@@ -80,39 +98,45 @@ export async function getWeekData(weekId) {
   const cached = cacheGet(`week_${weekId}`)
   if (cached) return cached
 
-  const [planRes, slotsRes] = await Promise.all([
-    supabase.from('week_plans').select('*').eq('week_number', weekId).single(),
-    supabase.from('session_slots')
-      .select('section, slot_order, activities(*)')
-      .eq('week_number', weekId)
-      .order('slot_order'),
-  ])
+  try {
+    const [planRes, slotsRes] = await Promise.all([
+      supabase.from('week_plans').select('*').eq('week_number', weekId).single(),
+      supabase.from('session_slots')
+        .select('section, slot_order, activities(*)')
+        .eq('week_number', weekId)
+        .order('slot_order'),
+    ])
 
-  if (planRes.error) throw planRes.error
-  if (slotsRes.error) throw slotsRes.error
+    if (planRes.error) throw planRes.error
+    if (slotsRes.error) throw slotsRes.error
 
-  const plan  = planRes.data
-  const slots = slotsRes.data
+    const plan  = planRes.data
+    const slots = slotsRes.data
 
-  const bySection = {}
-  for (const slot of slots) {
-    if (!bySection[slot.section]) bySection[slot.section] = []
-    bySection[slot.section].push(shapeActivity(slot.activities))
+    const bySection = {}
+    for (const slot of slots) {
+      if (!bySection[slot.section]) bySection[slot.section] = []
+      bySection[slot.section].push(shapeActivity(slot.activities))
+    }
+
+    const weekData = {
+      id:       weekId,
+      title:    `Week ${weekId}`,
+      focus:    plan.focus,
+      layout:   { notes: plan.layout_notes || [], image: null },
+      warmup:   bySection.warmup    || [],
+      throwing: bySection.throwing  || [],
+      kicking:  bySection.kicking   || [],
+      cooldown: bySection.cooldown?.[0] || null,
+    }
+
+    cacheSet(`week_${weekId}`, weekData)
+    return weekData
+  } catch (err) {
+    const snap = snapGet(`week_${weekId}`)
+    if (snap) return snap
+    throw err
   }
-
-  const weekData = {
-    id:       weekId,
-    title:    `Week ${weekId}`,
-    focus:    plan.focus,
-    layout:   { notes: plan.layout_notes || [], image: null },
-    warmup:   bySection.warmup    || [],
-    throwing: bySection.throwing  || [],
-    kicking:  bySection.kicking   || [],
-    cooldown: bySection.cooldown?.[0] || null,
-  }
-
-  cacheSet(`week_${weekId}`, weekData)
-  return weekData
 }
 
 export async function getAllActivities(type = null) {
@@ -186,4 +210,37 @@ export async function saveWeekPlan({ weekNumber, focus, layoutNotes, slots }) {
 
   cacheClear(`week_${weekNumber}`)
   cacheClear('all_weeks')
+}
+
+// ─── Offline sync ──────────────────────────────────────────────────────────────
+
+export async function syncAllData(onProgress) {
+  requireSupabase()
+
+  // 1. Fetch active weeks list
+  const { data: plans, error } = await supabase
+    .from('week_plans').select('week_number, is_active').eq('is_active', true)
+  if (error) throw error
+
+  const active = new Set(plans.map(p => p.week_number))
+  const weeks  = Array.from({ length: 24 }, (_, i) => ({
+    id:     i + 1,
+    title:  `Week ${i + 1}`,
+    active: active.has(i + 1),
+  }))
+  snapSet('all_weeks', weeks)
+  cacheSet('all_weeks', weeks)
+
+  // 2. Fetch and snapshot each active week's full data
+  const activeNums = plans.map(p => p.week_number).sort((a, b) => a - b)
+  for (let i = 0; i < activeNums.length; i++) {
+    const weekId = activeNums[i]
+    cacheClear(`week_${weekId}`)            // force a fresh fetch from Supabase
+    const weekData = await getWeekData(weekId)
+    snapSet(`week_${weekId}`, weekData)
+    onProgress?.(i + 1, activeNums.length)
+  }
+
+  // 3. Record sync timestamp
+  localStorage.setItem('fnd_snap_synced_at', Date.now().toString())
 }
