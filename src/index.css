@@ -5,6 +5,11 @@
   --color-yellow-club: #FFCC00;
 }
 
+/* Safe-area top padding — accounts for notch / Dynamic Island + a small buffer */
+.pt-safe {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
